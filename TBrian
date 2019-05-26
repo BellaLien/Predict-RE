@@ -118,3 +118,40 @@ CATORGORY_COLUMN = [
 CONTINOUS_COLUMN = [name for name in ALL_COLUMN if name not in CATORGORY_COLUMN and name not in NEIGHBOR_INDEX_COLUMN]
 # ==========================================================================================
 Y_COLUMN = "total_price"
+
+# 有 NA 的值
+# txn_floor
+# parking_area
+# village_income_median 
+# parking_price 
+
+# train.isnull().values.any()
+
+# Train 補 Missing Value
+train['txn_floor'] = train['txn_floor'].fillna(round(train.groupby(['building_use','building_type','city'])['txn_floor'].transform('mean')))
+train['txn_floor'] = train['txn_floor'].fillna(round(train.groupby(['building_type','city'])['txn_floor'].transform('mean')))
+train['txn_floor'] = train['txn_floor'].fillna(round(train.groupby(['city'])['txn_floor'].transform('mean')))
+# train["txn_floor"] = train["txn_floor"].fillna(value = 0.0)
+
+train["parking_area"] = train["parking_area"].fillna(value=0)
+
+train['village_income_median'] = train['village_income_median'].fillna(round(train.groupby(['city','town','village'])['village_income_median'].transform('mean')))
+train['village_income_median'] = train['village_income_median'].fillna(round(train.groupby(['city','town'])['village_income_median'].transform('mean')))
+train['village_income_median'] = train['village_income_median'].fillna(round(train.groupby(['city'])['village_income_median'].transform('mean')))
+# train["village_income_median"] = train["village_income_median"].fillna(train["village_income_median"].mean())
+
+train["parking_price"] = train["parking_price"].fillna(value=0)
+
+# Test 補 Missing Value
+test['txn_floor'] = test['txn_floor'].fillna(round(test.groupby(['building_use','building_type','city'])['txn_floor'].transform('mean')))
+test['txn_floor'] = test['txn_floor'].fillna(round(test.groupby(['building_type','city'])['txn_floor'].transform('mean')))
+test['txn_floor'] = test['txn_floor'].fillna(round(test.groupby(['city'])['txn_floor'].transform('mean')))
+# test["txn_floor"] = test["txn_floor"].fillna(value = 0.0)
+test["parking_area"] = test["parking_area"].fillna(value=0)
+
+test['village_income_median'] = test['village_income_median'].fillna(round(test.groupby(['city','town','village'])['village_income_median'].transform('mean')))
+test['village_income_median'] = test['village_income_median'].fillna(round(test.groupby(['city','town'])['village_income_median'].transform('mean')))
+test['village_income_median'] = test['village_income_median'].fillna(round(test.groupby(['city'])['village_income_median'].transform('mean')))
+# test["village_income_median"] = test["village_income_median"].fillna(value=test["village_income_median"].mean())
+
+test["parking_price"] = test["parking_price"].fillna(value=0)
