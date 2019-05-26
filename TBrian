@@ -1,15 +1,120 @@
-# 导入需要的模块
 import pandas as pd
-import matplotlib.pyplot as plt
+from pandas.core import datetools
 import numpy as np
+import seaborn as sns;sns.set(color_codes=True)
+import matplotlib.pyplot as plt 
 
-# # 用来绘图的，封装了matplot
-# # 要注意的是一旦导入了seaborn，
-# # matplotlib的默认作图风格就会被覆盖成seaborn的格式
-# import seaborn as sns       
+import sklearn 
+from sklearn.linear_model import Lasso, Ridge
+from sklearn.model_selection import train_test_split
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2           # 類別 預測 類別
+from sklearn.feature_selection import f_regression
+from sklearn.feature_selection import f_classif      # ANOVA
+from sklearn import linear_model
 
-from scipy import stats
-from scipy.stats import  norm
-from sklearn.preprocessing import StandardScaler
-import warnings
-warnings.filterwarnings('ignore')
+
+from pandas.plotting import scatter_matrix
+
+import statsmodels.api as sm
+
+
+pd.set_option('display.max_rows', 50) 
+pd.set_option('display.max_columns', 250)
+pd.set_option('display.float_format', lambda x: f"{x:.6f}")  # 讓顯示出來的數字不要使用科學記號
+
+np.set_printoptions(suppress=True)  # 讓顯示出來的數字不要使用科學記號
+
+plt.rcParams['font.sans-serif']=['Monospace 11']
+
+# 節省記憶體用的
+train = pd.read_csv("./train.csv", header=0)
+test  = pd.read_csv("./test.csv", header=0)
+submit_test = pd.read_csv("./submit_test.csv", header=0)
+
+ALL_COLUMN = train.columns.values
+
+IMPORTANT_COLUMNS = [   
+    'building_use', 
+    'parking_area',                # 車位面積(轉)
+    'txn_floor', 
+    'land_area',                   # 土地面積(轉)
+    'building_area',               # 建物面積(轉)
+    'village_income_median', 
+    'town_population_density',
+    'city', 
+    
+    
+    'town', 
+    'village', 
+    'town_population', 
+    'town_area',
+    
+    'txn_dt', 
+    'total_floor',
+    
+    'building_material',  
+    'building_type', 
+    'building_complete_dt', 
+    
+    'parking_way',                # 車位停放方式
+    'parking_price',              # 車位價格(轉)
+    
+    'lat',                        # 緯度(轉)
+    'lon',                        # 經度(轉)
+    
+    'doc_rate', 
+    'master_rate', 
+    'bachelor_rate',
+    'jobschool_rate', 
+    'highschool_rate', 
+    'junior_rate', 
+    'elementary_rate',
+    'born_rate', 
+    'death_rate', 
+    'marriage_rate', 
+    'divorce_rate', 
+    
+]
+
+# 14 種周遭建築物代稱   補0是為了之後要哪一類就用那個數字就好了
+NEIGHBOR_BUILDING_TYPE    = ['0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV']
+# 14種周遭建築物距離範圍
+NEIGHBOR_BUILDING_DISTANT = ['50', '500', '1000', '5000', '10000']
+
+NEIGHBOR_FORMAT = [
+    "{}_{}",             # {1} 類建築物在方圓 {2} 公里內有多少
+    "{}_index_{}",       # 方圓 {2} 公里內有無 {1} 類建築物
+    "{}_MIN"             # 該房屋與最近的 {1} 類別之距離
+]
+
+
+NEIGHBOR_COLUMN = []
+for i in NEIGHBOR_BUILDING_TYPE:
+    NEIGHBOR_COLUMN.append(NEIGHBOR_FORMAT[2].format(i))
+    for j in NEIGHBOR_BUILDING_DISTANT:
+        NEIGHBOR_COLUMN.append(NEIGHBOR_FORMAT[0].format(i, j))
+        NEIGHBOR_COLUMN.append(NEIGHBOR_FORMAT[1].format(i, j))
+        
+
+NEIGHBOR_INDEX_COLUMN = []
+for t in NEIGHBOR_BUILDING_TYPE[1:]:
+    for i in NEIGHBOR_BUILDING_DISTANT:
+        NEIGHBOR_INDEX_COLUMN.append(NEIGHBOR_FORMAT[1].format(t, i))
+
+# IMPORTANT_COLUMNS = IMPORTANT_COLUMNS + AREA_NEIGHBOR
+# ==========================================================================================
+# 要將型態轉為 -- dummy Variable (Catorgory)
+
+CATORGORY_COLUMN = [
+    "building_material",
+    "city",
+    "town",
+    "building_type",
+    "building_use",
+    "parking_way",
+]
+
+CONTINOUS_COLUMN = [name for name in ALL_COLUMN if name not in CATORGORY_COLUMN and name not in NEIGHBOR_INDEX_COLUMN]
+# ==========================================================================================
+Y_COLUMN = "total_price"
